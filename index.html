@@ -135,14 +135,37 @@
                     console.log('Deep link:', deepLink);
                     
                     // 딥링크로 리다이렉트 시도
+                    let appOpened = false;
+                    
+                    // 페이지가 백그라운드로 가면 앱이 열린 것으로 판단
+                    const visibilityHandler = () => {
+                        if (document.hidden) {
+                            appOpened = true;
+                        }
+                    };
+                    document.addEventListener('visibilitychange', visibilityHandler);
+                    
+                    // 블러 이벤트로도 확인 (iOS에서 더 안정적)
+                    const blurHandler = () => {
+                        appOpened = true;
+                    };
+                    window.addEventListener('blur', blurHandler);
+                    
                     window.location.href = deepLink;
                     
-                    // iOS/Android에서는 앱이 없으면 2초 후 스토어로
+                    // 앱이 없으면 2.5초 후 스토어로 (조금 더 여유있게)
                     setTimeout(() => {
-                        showStoreLinks();
-                        document.getElementById('status').innerHTML = 
-                            '<p class="message">앱이 설치되어 있지 않은 것 같습니다.</p>';
-                    }, 2000);
+                        // 이벤트 리스너 제거
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                        window.removeEventListener('blur', blurHandler);
+                        
+                        // 앱이 열리지 않은 경우에만 스토어 링크 표시
+                        if (!appOpened) {
+                            showStoreLinks();
+                            document.getElementById('status').innerHTML = 
+                                '<p class="message">앱이 설치되어 있지 않은 것 같습니다.</p>';
+                        }
+                    }, 2500);
                     
                 } else {
                     // 링크를 찾을 수 없음
